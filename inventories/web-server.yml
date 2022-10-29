@@ -1,6 +1,6 @@
 all:
   children:
-    web_servers:
+    web_server:
       hosts:
         web-server-0.web:
         web-server-1.web:

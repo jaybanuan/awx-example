@@ -75,21 +75,21 @@ associate_job_template() {
 }
 
 
-test -n "${TOWER_HOST}" || {
-    echo "TOWER_HOST must be specified." >&2
+test -n "${CONTROLLER_HOST}" || {
+    echo "CONTROLLER_HOST must be specified." >&2
     exit 1
 }
 
 
-test -n "${TOWER_OAUTH_TOKEN}" || {
-    echo "TOWER_OAUTH_TOKEN must be specified." >&2
+test -n "${CONTROLLER_OAUTH_TOKEN}" || {
+    echo "CONTROLLER_OAUTH_TOKEN must be specified." >&2
     exit 1
 }
 
 
-create_project awx-example-project https://github.com/jaybanuan/awx-example.git
-create_inventory web-server-inventory
-create_inventory_source web-server-inventory-sources web-server-inventory awx-example-project inventories/web-server.yml
-create_credential web-server-credential Machine '{"password": "root", "username": "root"}'
+#create_project awx-example-project https://github.com/jaybanuan/awx-example.git
+#create_inventory web-server-inventory
+#create_inventory_source web-server-inventory-sources web-server-inventory awx-example-project inventories/web-server.yml
+#create_credential web-server-credential Machine '{"password": "root", "username": "root"}'
 create_job_template web-server-job-template web-server-inventory awx-example-project playbooks/web_server.yml
 associate_job_template web-server-job-template web-server-credential
