@@ -1,0 +1,4 @@
+- name: Install NGINX
+  ansible.builtin.dnf:
+    name: nginx
+    state: latest
