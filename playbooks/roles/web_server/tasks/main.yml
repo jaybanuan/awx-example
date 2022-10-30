@@ -2,3 +2,9 @@
   ansible.builtin.dnf:
     name: nginx
     state: latest
+
+- name: Enable NGINX
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: yes
