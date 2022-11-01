@@ -1,34 +1,20 @@
 - hosts: localhost
   connection: local
+
+# for commandline
+#
 #  environment:
 #    CONTROLLER_HOST: "{{ ansible_env.CONTROLLER_HOST }}"
 #    CONTROLLER_USERNAME: "{{ ansible_env.CONTROLLER_USERNAME }}"
 #    CONTROLLER_PASSWORD: "{{ ansible_env.CONTROLLER_PASSWORD }}"
 
   tasks:
-    - name: inventory
-      shell: cat /runner/inventory/hosts
-      register: inventory
-
-    - name: inventory
-      shell: cat /runner/env/extravars
-      register: extravars
-
-    - name: env
-      debug:
-        var: "{{ item }}"
-      loop:
-        - ansible_env
-        - ansible_facts
-        - inventory
-        - extravars
-
     - name: Add project
       awx.awx.project:
         name: awx-example-project
+        organization: Default
         scm_type: git
         scm_url: https://github.com/jaybanuan/awx-example.git
-        organization: Default
 
     - name: Add inventory
       awx.awx.inventory:
@@ -38,8 +24,8 @@
     - name: Add inventory source
       awx.awx.inventory_source:
         name: web-server-inventory-source
-        inventory: web-server-inventory
         organization: Default
+        inventory: web-server-inventory
         source: scm
         source_project: awx-example-project
         source_path: inventories/web-server.yml
