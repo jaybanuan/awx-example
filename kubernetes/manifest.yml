@@ -7,8 +7,8 @@ spec:
   type: NodePort
   ports:
     - name: http
-      port: 8080
-      targetPort: 8080
+      port: 80
+      targetPort: 80
   selector:
     app.kubernetes.io/name: web-server
 
@@ -52,6 +52,6 @@ spec:
             - dnf -y install openssh-server && echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config && echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config && echo 'root:root' | chpasswd && /sbin/init
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 80
             - name: ssh
               containerPort: 22

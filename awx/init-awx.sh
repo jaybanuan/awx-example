@@ -1,109 +1,44 @@
 #!/bin/bash
 
-ORGANIZATION_NAME=Default
-ORGANIZATION_ID=$(awx organization get -f jq --filter '.id' "${ORGANIZATION_NAME}")
+ORGANIZATION_ID=$(awx organization get -f jq --filter '.id' Default)
 
+awx project create \
+    --name awx-example-project \
+    --organization "${ORGANIZATION_ID}" \
+    --scm_type git \
+    --scm_url https://github.com/jaybanuan/awx-example.git \
+    --wait \
+    --monitor
 
-create_project() {
-    local PROJECT_NAME=$1
-    local SCM_URL=$2
+awx inventory create \
+    --name web-server-inventory \
+    --organization "${ORGANIZATION_ID}"
 
-    awx project create \
-        --wait \
-        --monitor \
-        --name "${PROJECT_NAME}" \
-        --scm_type git \
-        --scm_url "${SCM_URL}"
-}
+awx inventory_source create \
+    --name web-server-inventory-source \
+    --inventory $(awx inventory get -f jq --filter '.id' web-server-inventory) \
+    --source scm \
+    --source_project $(awx project get -f jq --filter '.id' awx-example-project) \
+    --source_path inventories/web-server.yml
 
+awx inventory_source update \
+    --wait \
+    --monitor \
+    web-server-inventory-source
 
-create_inventory() {
-    local INVENTORY_NAME=$1
+awx credential create \
+    --name web-server-credential \
+    --credential_type Machine \
+    --organization "${ORGANIZATION_ID}" \
+    --inputs '{"password": "root", "username": "root"}'
 
-    awx inventory create \
-        --name "${INVENTORY_NAME}" \
-        --organization "${ORGANIZATION_ID}"
-}
+awx job_template create \
+    --name web-server-job-template \
+    --job_type run \
+    --inventory $(awx inventory get -f jq --filter '.id' web-server-inventory) \
+    --project $(awx project get -f jq --filter '.id' awx-example-project) \
+    --playbook playbooks/web_server.yml
 
-
-create_inventory_source() {
-    local INVENTORY_SOURCE_NAME="$1"
-    local INVENTORY_ID=$(awx inventory get -f jq --filter '.id' "$2")
-    local PROJECT_ID=$(awx project get -f jq --filter '.id' "$3")
-    local SOURCE_PATH="$4"
-
-    awx inventory_source create \
-        --name "${INVENTORY_SOURCE_NAME}" \
-        --inventory "${INVENTORY_ID}" \
-        --source scm \
-        --source_project "${PROJECT_ID}" \
-        --source_path "${SOURCE_PATH}"
-}
-
-
-update_inventory_source() {
-    local INVENTORY_SOURCE_NAME="$1"
-
-    awx inventory_source update \
-        --wait \
-        --monitor \
-        "${INVENTORY_SOURCE_NAME}"
-}
-
-
-create_credential() {
-    local NAME="$1"
-    local CREDENTIAL_TYPE="$2"
-    local INPUTS="$3"
-
-    awx credential create \
-        --name "${NAME}" \
-        --credential_type "${CREDENTIAL_TYPE}" \
-        --organization "${ORGANIZATION_ID}" \
-        --inputs "${INPUTS}"
-}
-
-
-create_job_template() {
-    local NAME="$1"
-    local INVENTORY_ID=$(awx inventory get -f jq --filter '.id' "$2")
-    local PROJECT_ID=$(awx project get -f jq --filter '.id' "$3")
-    local PLAYBOOK="$4"
-
-    awx job_template create \
-        --name "${NAME}" \
-        --job_type run \
-        --inventory "${INVENTORY_ID}" \
-        --project "${PROJECT_ID}" \
-        --playbook "${PLAYBOOK}"
-}
-
-associate_job_template() {
-    local JOB_TEMPLATE_ID=$(awx job_template get -f jq --filter '.id' "$1")
-    local CREDENTIAL="$2"
-
-    awx job_template associate \
-        --credential "${CREDENTIAL}" \
-        "${JOB_TEMPLATE_ID}"
-}
-
-
-test -n "${CONTROLLER_HOST}" || {
-    echo "CONTROLLER_HOST must be specified." >&2
-    exit 1
-}
-
-
-test -n "${CONTROLLER_OAUTH_TOKEN}" || {
-    echo "CONTROLLER_OAUTH_TOKEN must be specified." >&2
-    exit 1
-}
-
-
-create_project awx-example-project https://github.com/jaybanuan/awx-example.git
-create_inventory web-server-inventory
-create_inventory_source web-server-inventory-source web-server-inventory awx-example-project inventories/web-server.yml
-update_inventory_source web-server-inventory-source
-create_credential web-server-credential Machine '{"password": "root", "username": "root"}'
-create_job_template web-server-job-template web-server-inventory awx-example-project playbooks/web_server.yml
-associate_job_template web-server-job-template web-server-credential
+awx job_template associate \
+    --credential web-server-credential \
+    $(awx job_template get -f jq --filter '.id' web-server-job-template)

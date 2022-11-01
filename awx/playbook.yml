@@ -1,0 +1,55 @@
+- hosts: localhost
+  gather_facts: false
+  connection: local
+  environment:
+    CONTROLLER_HOST: "{{ ansible_env.CONTROLLER_HOST }}"
+    CONTROLLER_USERNAME: "{{ ansible_env.CONTROLLER_USERNAME }}"
+    CONTROLLER_PASSWORD: "{{ ansible_env.CONTROLLER_PASSWORD }}"
+
+  tasks:
+    - name: Add project
+      awx.awx.project:
+        name: awx-example-project
+        scm_type: git
+        scm_url: https://github.com/jaybanuan/awx-example.git
+        organization: Default
+
+    - name: Add inventory
+      awx.awx.inventory:
+        name: web-server-inventory
+        organization: Default
+
+    - name: Add inventory source
+      awx.awx.inventory_source:
+        name: web-server-inventory-source
+        inventory: web-server-inventory
+        organization: Default
+        source: scm
+        source_project: awx-example-project
+        source_path: inventories/web-server.yml
+
+    - name: Update inventory source
+      awx.awx.inventory_source_update:
+        name: web-server-inventory-source
+        inventory: web-server-inventory
+        wait: true
+
+    - name: Add credential
+      awx.awx.credential:
+        name: web-server-credential
+        organization: Default
+        credential_type: Machine
+        inputs:
+          username: root
+          password: root
+
+    - name: Add job template
+      awx.awx.tower_job_template:
+        name: web-server-job-template
+        job_type: run
+        organization: Default
+        inventory: web-server-inventory
+        project: awx-example-project
+        playbook: playbooks/web_server.yml
+        credentials:
+          - web-server-credential
