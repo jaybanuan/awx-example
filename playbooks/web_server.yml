@@ -1,5 +1,4 @@
 - name: Web Server Playbook
   hosts: web_server
-  gather_facts: false
   roles:
     - role: web_server
