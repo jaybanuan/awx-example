@@ -1,12 +1,28 @@
 - hosts: localhost
-  gather_facts: false
   connection: local
-  environment:
-    CONTROLLER_HOST: "{{ ansible_env.CONTROLLER_HOST }}"
-    CONTROLLER_USERNAME: "{{ ansible_env.CONTROLLER_USERNAME }}"
-    CONTROLLER_PASSWORD: "{{ ansible_env.CONTROLLER_PASSWORD }}"
+#  environment:
+#    CONTROLLER_HOST: "{{ ansible_env.CONTROLLER_HOST }}"
+#    CONTROLLER_USERNAME: "{{ ansible_env.CONTROLLER_USERNAME }}"
+#    CONTROLLER_PASSWORD: "{{ ansible_env.CONTROLLER_PASSWORD }}"
 
   tasks:
+    - name: inventory
+      shell: cat /runner/inventory/hosts
+      register: inventory
+
+    - name: inventory
+      shell: cat /runner/env/extravars
+      register: extravars
+
+    - name: env
+      debug:
+        var: "{{ item }}"
+      loop:
+        - ansible_env
+        - ansible_facts
+        - inventory
+        - extravars
+
     - name: Add project
       awx.awx.project:
         name: awx-example-project
